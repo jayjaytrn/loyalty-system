@@ -32,7 +32,7 @@ func BuildJWT(UUID string) (string, error) {
 	return tokenString, nil
 }
 
-func ValidateJWT(tokenString string) error {
+func ValidateJWT(tokenString string) (string, error) {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
 		func(t *jwt.Token) (interface{}, error) {
@@ -42,11 +42,12 @@ func ValidateJWT(tokenString string) error {
 			return []byte(SecretKey), nil
 		})
 	if err != nil {
-		return fmt.Errorf("token error: %w", err)
+		return "", fmt.Errorf("token error: %w", err)
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("token is not valid: %w", err)
+		return "", fmt.Errorf("token is not valid: %w", err)
 	}
-	return nil
+
+	return claims.UUID, nil
 }

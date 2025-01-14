@@ -1,0 +1,89 @@
+package accrual
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/jayjaytrn/loyalty-system/internal/db"
+	"github.com/jayjaytrn/loyalty-system/models"
+	"net/http"
+	"time"
+)
+
+type Manager struct {
+	Database *db.Manager
+	Orders   chan models.OrderToAccrual
+}
+
+func NewManager(orders chan models.OrderToAccrual, database *db.Manager) *Manager {
+	return &Manager{
+		Orders:   orders,
+		Database: database,
+	}
+}
+
+func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("stopping order processing due to context cancellation")
+			return
+		case order, ok := <-m.Orders:
+			if !ok {
+				fmt.Println("orders channel closed, stopping processing")
+				return
+			}
+			orderInfo, err := m.getOrderInfo(order.OrderNumber)
+			if err != nil {
+				fmt.Println(err)
+			}
+			if orderInfo == nil {
+				continue
+			}
+			if orderInfo.Status != models.AccrualOrderRegistered {
+				m.updateOrder(orderInfo)
+			}
+			if orderInfo.Accrual != 0 {
+				m.updateBalance(order.UUID, orderInfo.Accrual)
+			}
+		}
+	}
+}
+
+func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) {
+	err := m.Database.UpdateOrder(accrualResponse)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+}
+
+func (m *Manager) updateBalance(UUID string, accrual float64) {
+	err := m.Database.UpdateBalance(UUID, accrual)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (m *Manager) getOrderInfo(orderNumber string) (*models.AccrualResponse, error) {
+	url := fmt.Sprintf("http://localhost:8080/api/orders/%s", orderNumber)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var accrualResp models.AccrualResponse
+	if err := json.NewDecoder(resp.Body).Decode(&accrualResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &accrualResp, nil
+}

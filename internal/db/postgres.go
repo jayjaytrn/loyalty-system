@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jayjaytrn/loyalty-system/config"
@@ -38,7 +39,7 @@ func NewManager(cfg *config.Config) (*Manager, error) {
 
 func (m *Manager) PutUniqueUserData(user models.User) error {
 	_, err := m.db.Exec(`
-        INSERT INTO gophermart (uuid, login, password)
+        INSERT INTO users (uuid, login, password)
         VALUES ($1, $2, $3)
     `, user.UUID, user.Login, user.Password)
 	if err != nil {
@@ -51,10 +52,9 @@ func (m *Manager) PutUniqueUserData(user models.User) error {
 func (m *Manager) GetUserData(login string) (models.User, error) {
 	var user models.User
 
-	// Запрос для получения пользователя по логину
 	err := m.db.QueryRow(`
 		SELECT uuid, login, password 
-		FROM gophermart 
+		FROM users 
 		WHERE login = $1
 	`, login).Scan(&user.UUID, &user.Login, &user.Password)
 
@@ -63,6 +63,114 @@ func (m *Manager) GetUserData(login string) (models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (m *Manager) PutOrder(order models.Order) error {
+	_, err := m.db.Exec(`
+        INSERT INTO orders (uuid, order_number, order_status)
+        VALUES ($1, $2, $3)
+    `, order.UUID, order.OrderNumber, order.OrderStatus)
+	if err != nil {
+		return fmt.Errorf("failed to insert user data: %v", err)
+	}
+
+	return nil
+}
+
+func (m *Manager) UpdateOrder(order *models.AccrualResponse) error {
+	_, err := m.db.Exec(`
+        UPDATE orders
+        SET order_status = $1, accrual = $2
+        WHERE order_number = $3
+    `, order.Status, order.Accrual, order.Order)
+	if err != nil {
+		return fmt.Errorf("failed to update order: %v", err)
+	}
+
+	return nil
+}
+
+func (m *Manager) GetOrdersList(UUID string) ([]*models.Order, error) {
+	var orders []*models.Order
+
+	rows, err := m.db.Query(`
+		SELECT uuid, order_number, order_status, accrual, uploaded_at
+		FROM orders
+		WHERE uuid = $1
+		ORDER BY uploaded_at DESC
+	`, UUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var order models.Order
+		err := rows.Scan(&order.UUID, &order.OrderNumber, &order.OrderStatus, &order.Accrual, &order.UploadedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		orders = append(orders, &order)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during rows iteration: %v", err)
+	}
+
+	return orders, nil
+}
+
+func (m *Manager) GetOrderByOrderNumber(orderNumber string) (*models.Order, error) {
+	var order models.Order
+
+	err := m.db.QueryRow(`
+		SELECT uuid, order_number, order_status, accrual, uploaded_at
+		FROM orders
+		WHERE order_number = $1
+	`, orderNumber).Scan(&order.UUID, &order.OrderNumber, &order.OrderStatus, &order.Accrual, &order.UploadedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	return &order, nil
+}
+
+func (m *Manager) UpdateBalance(UUID string, accrual float64) error {
+	_, err := m.db.Exec(`
+		INSERT INTO balances (uuid, current, withdrawn)
+		VALUES ($1, $2, 0)
+		ON CONFLICT (uuid) DO UPDATE
+		SET current = balances.current + $2
+	`, UUID, accrual)
+
+	if err != nil {
+		return fmt.Errorf("failed to update balance: %v", err)
+	}
+
+	return nil
+}
+
+func (m *Manager) GetBalance(UUID string) (*models.Balance, error) {
+	var balance models.Balance
+
+	err := m.db.QueryRow(`
+		SELECT current, withdrawn
+		FROM balances
+		WHERE uuid = $1
+	`, UUID).Scan(&balance.Current, &balance.Withdrawn)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	return &balance, nil
 }
 
 func (m *Manager) Close() error {

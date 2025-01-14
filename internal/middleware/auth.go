@@ -21,12 +21,15 @@ func ValidateAuth(h http.Handler, sugar *zap.SugaredLogger) http.Handler {
 			return
 		}
 
-		err := auth.ValidateJWT(tokenString)
+		UUID, err := auth.ValidateJWT(tokenString)
 		if err != nil {
 			sugar.Errorw("Invalid token", "error", err)
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
+
+		r.Header.Set("UUID", UUID)
+
 		h.ServeHTTP(w, r)
 	})
 }

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/jayjaytrn/loyalty-system/config"
+	"github.com/jayjaytrn/loyalty-system/internal/accrual"
 	"github.com/jayjaytrn/loyalty-system/internal/db"
 	"github.com/jayjaytrn/loyalty-system/internal/handlers"
 	"github.com/jayjaytrn/loyalty-system/internal/middleware"
 	"github.com/jayjaytrn/loyalty-system/logging"
+	"github.com/jayjaytrn/loyalty-system/models"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -23,10 +26,17 @@ func main() {
 	}
 	defer database.Close()
 
+	ordersToAccrualSystem := make(chan models.OrderToAccrual)
+	am := accrual.NewManager(ordersToAccrualSystem, database)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go am.GetOrderInfoAndUpdateBalances(ctx)
+
 	h := handlers.Handler{
-		Config:   cfg,
-		Database: *database,
-		Logger:   logger,
+		Config:         cfg,
+		Database:       database,
+		Logger:         logger,
+		AccrualManager: am,
 	}
 
 	r := initRouter(h, logger)
@@ -62,7 +72,29 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 	r.Post(`/api/user/orders`,
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
-				http.HandlerFunc(h.Login),
+				http.HandlerFunc(h.Orders),
+				logger,
+				middleware.WriteWithCompression,
+				middleware.ReadWithCompression,
+				middleware.ValidateAuth,
+			).ServeHTTP(w, r)
+		},
+	)
+	r.Get(`/api/user/orders`,
+		func(w http.ResponseWriter, r *http.Request) {
+			middleware.Conveyor(
+				http.HandlerFunc(h.OrdersGet),
+				logger,
+				middleware.WriteWithCompression,
+				middleware.ReadWithCompression,
+				middleware.ValidateAuth,
+			).ServeHTTP(w, r)
+		},
+	)
+	r.Get(`/api/user/balance`,
+		func(w http.ResponseWriter, r *http.Request) {
+			middleware.Conveyor(
+				http.HandlerFunc(h.Balance),
 				logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,

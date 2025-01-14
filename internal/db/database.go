@@ -7,5 +7,13 @@ import (
 type Database interface {
 	PutUniqueUserData(userData models.User) error
 	GetUserData(login string) models.User
+
+	PutOrder(order models.Order) error
+	UpdateOrder(order models.AccrualResponse) error
+	GetOrdersList(UUID string) ([]*models.Order, error)
+	GetOrderByOrderNumber(orderNumber string) (*models.Order, error)
+
+	UpdateBalance(UUID string, accrual float64) error
+	GetBalance(UUID string) (models.Balance, error)
 	Close() error
 }
