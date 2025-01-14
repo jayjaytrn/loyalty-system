@@ -222,6 +222,7 @@ func (h *Handler) OrdersGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to encode orders", http.StatusInternalServerError)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -249,6 +250,7 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to encode orders", http.StatusInternalServerError)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -342,5 +344,6 @@ func (h *Handler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to encode withdrawals", http.StatusInternalServerError)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }
