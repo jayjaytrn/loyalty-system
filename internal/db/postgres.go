@@ -170,7 +170,7 @@ func (m *Manager) PutWithdraw(UUID string, orderNumber string, sum float64) erro
 
 func (m *Manager) GetWithdrawals(UUID string) ([]*models.WithdrawalsResponse, error) {
 	rows, err := m.db.Query(`
-		SELECT orderNumber, sum, processed_at
+		SELECT order_number, sum, processed_at
 		FROM withdrawals
 		WHERE uuid = $1
 		ORDER BY processed_at DESC

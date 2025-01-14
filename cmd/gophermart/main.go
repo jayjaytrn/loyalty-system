@@ -113,7 +113,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 			).ServeHTTP(w, r)
 		},
 	)
-	r.Get(`/api/user/balance/withdrawals`,
+	r.Get(`/api/user/withdrawals`,
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Withdrawals),
