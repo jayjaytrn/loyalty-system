@@ -13,10 +13,10 @@ type Database interface {
 	GetOrdersList(UUID string) ([]*models.Order, error)
 	GetOrderByOrderNumber(orderNumber string) (*models.Order, error)
 
-	UpdateBalance(UUID string, accrual float64) error
+	UpdateBalance(UUID string, accrual float32) error
 	GetBalance(UUID string) (models.Balance, error)
 
-	PutWithdraw(UUID string, orderNumber string, sum float64) error
+	PutWithdraw(UUID string, orderNumber string, sum float32) error
 	GetWithdrawals() ([]*models.WithdrawalsResponse, error)
 
 	Close() error

@@ -51,7 +51,7 @@ func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
 			}
 			if orderInfo.Accrual != 0 {
 				withdrawn := 0
-				m.updateBalance(order.UUID, orderInfo.Accrual, float64(withdrawn))
+				m.updateBalance(order.UUID, orderInfo.Accrual, float32(withdrawn))
 			}
 		}
 	}
@@ -65,7 +65,7 @@ func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) {
 
 }
 
-func (m *Manager) updateBalance(UUID string, accrual float64, withdraw float64) {
+func (m *Manager) updateBalance(UUID string, accrual float32, withdraw float32) {
 	err := m.Database.UpdateBalance(UUID, accrual, withdraw)
 	if err != nil {
 		fmt.Println(err)

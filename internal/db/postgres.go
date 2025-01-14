@@ -139,7 +139,7 @@ func (m *Manager) GetOrderByOrderNumber(orderNumber string) (*models.Order, erro
 	return &order, nil
 }
 
-func (m *Manager) UpdateBalance(UUID string, accrual float64, withdrawn float64) error {
+func (m *Manager) UpdateBalance(UUID string, accrual float32, withdrawn float32) error {
 	_, err := m.db.Exec(`
 		INSERT INTO balances (uuid, current, withdrawn)
 		VALUES ($1, $2, $3)
@@ -155,7 +155,7 @@ func (m *Manager) UpdateBalance(UUID string, accrual float64, withdrawn float64)
 	return nil
 }
 
-func (m *Manager) PutWithdraw(UUID string, orderNumber string, sum float64) error {
+func (m *Manager) PutWithdraw(UUID string, orderNumber string, sum float32) error {
 	_, err := m.db.Exec(`
 		INSERT INTO withdrawals (uuid, order_number, sum)
 		VALUES ($1, $2, $3)
