@@ -73,6 +73,7 @@ func (m *Manager) updateBalance(UUID string, accrual float64, withdraw float64) 
 }
 
 func (m *Manager) getOrderInfo(orderNumber string) (*models.AccrualResponse, error) {
+	m.Logger.Info(fmt.Sprintf("getting order info: %s/api/orders/%s", m.Config.AccrualSystemAddress, orderNumber))
 	url := fmt.Sprintf("%s/api/orders/%s", m.Config.AccrualSystemAddress, orderNumber)
 
 	client := &http.Client{Timeout: 10 * time.Second}
