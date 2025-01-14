@@ -318,7 +318,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Database.UpdateBalance(UUID, -withdrawRequest.Sum, withdrawRequest.Sum)
 
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Withdrawals(w http.ResponseWriter, r *http.Request) {
