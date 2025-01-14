@@ -15,5 +15,9 @@ type Database interface {
 
 	UpdateBalance(UUID string, accrual float64) error
 	GetBalance(UUID string) (models.Balance, error)
+
+	PutWithdraw(UUID string, orderNumber string, sum float64) error
+	GetWithdrawals() ([]*models.WithdrawalsResponse, error)
+
 	Close() error
 }

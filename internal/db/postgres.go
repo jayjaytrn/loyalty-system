@@ -139,19 +139,62 @@ func (m *Manager) GetOrderByOrderNumber(orderNumber string) (*models.Order, erro
 	return &order, nil
 }
 
-func (m *Manager) UpdateBalance(UUID string, accrual float64) error {
+func (m *Manager) UpdateBalance(UUID string, accrual float64, withdrawn float64) error {
 	_, err := m.db.Exec(`
 		INSERT INTO balances (uuid, current, withdrawn)
-		VALUES ($1, $2, 0)
+		VALUES ($1, $2, $3)
 		ON CONFLICT (uuid) DO UPDATE
-		SET current = balances.current + $2
-	`, UUID, accrual)
+		SET current = balances.current + $2,
+		    withdrawn = balances.withdrawn + $3
+	`, UUID, accrual, withdrawn)
 
 	if err != nil {
 		return fmt.Errorf("failed to update balance: %v", err)
 	}
 
 	return nil
+}
+
+func (m *Manager) PutWithdraw(UUID string, orderNumber string, sum float64) error {
+	_, err := m.db.Exec(`
+		INSERT INTO withdrawals (uuid, order_number, sum)
+		VALUES ($1, $2, $3)
+	`, UUID, orderNumber, sum)
+
+	if err != nil {
+		return fmt.Errorf("failed to update withdraw: %v", err)
+	}
+
+	return nil
+}
+
+func (m *Manager) GetWithdrawals(UUID string) ([]*models.WithdrawalsResponse, error) {
+	rows, err := m.db.Query(`
+		SELECT orderNumber, sum, processed_at
+		FROM withdrawals
+		WHERE uuid = $1
+		ORDER BY processed_at DESC
+	`, UUID)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get withdrawals: %v", err)
+	}
+	defer rows.Close()
+
+	var withdrawals []*models.WithdrawalsResponse
+	for rows.Next() {
+		var withdrawal models.WithdrawalsResponse
+		if err := rows.Scan(&withdrawal.OrderNumber, &withdrawal.Sum, &withdrawal.ProcessedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan withdrawal: %v", err)
+		}
+		withdrawals = append(withdrawals, &withdrawal)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate rows: %v", err)
+	}
+
+	return withdrawals, nil
 }
 
 func (m *Manager) GetBalance(UUID string) (*models.Balance, error) {

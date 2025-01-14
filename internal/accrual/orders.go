@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jayjaytrn/loyalty-system/config"
 	"github.com/jayjaytrn/loyalty-system/internal/db"
 	"github.com/jayjaytrn/loyalty-system/models"
 	"net/http"
@@ -13,12 +14,14 @@ import (
 type Manager struct {
 	Database *db.Manager
 	Orders   chan models.OrderToAccrual
+	Config   *config.Config
 }
 
-func NewManager(orders chan models.OrderToAccrual, database *db.Manager) *Manager {
+func NewManager(orders chan models.OrderToAccrual, database *db.Manager, config *config.Config) *Manager {
 	return &Manager{
 		Orders:   orders,
 		Database: database,
+		Config:   config,
 	}
 }
 
@@ -44,7 +47,8 @@ func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
 				m.updateOrder(orderInfo)
 			}
 			if orderInfo.Accrual != 0 {
-				m.updateBalance(order.UUID, orderInfo.Accrual)
+				withdrawn := 0
+				m.updateBalance(order.UUID, orderInfo.Accrual, float64(withdrawn))
 			}
 		}
 	}
@@ -58,8 +62,8 @@ func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) {
 
 }
 
-func (m *Manager) updateBalance(UUID string, accrual float64) {
-	err := m.Database.UpdateBalance(UUID, accrual)
+func (m *Manager) updateBalance(UUID string, accrual float64, withdraw float64) {
+	err := m.Database.UpdateBalance(UUID, accrual, withdraw)
 	if err != nil {
 		fmt.Println(err)
 	}

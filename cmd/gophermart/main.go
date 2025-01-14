@@ -27,7 +27,7 @@ func main() {
 	defer database.Close()
 
 	ordersToAccrualSystem := make(chan models.OrderToAccrual)
-	am := accrual.NewManager(ordersToAccrualSystem, database)
+	am := accrual.NewManager(ordersToAccrualSystem, database, cfg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go am.GetOrderInfoAndUpdateBalances(ctx)
@@ -95,6 +95,28 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Balance),
+				logger,
+				middleware.WriteWithCompression,
+				middleware.ReadWithCompression,
+				middleware.ValidateAuth,
+			).ServeHTTP(w, r)
+		},
+	)
+	r.Post(`/api/user/balance/withdraw`,
+		func(w http.ResponseWriter, r *http.Request) {
+			middleware.Conveyor(
+				http.HandlerFunc(h.Withdraw),
+				logger,
+				middleware.WriteWithCompression,
+				middleware.ReadWithCompression,
+				middleware.ValidateAuth,
+			).ServeHTTP(w, r)
+		},
+	)
+	r.Get(`/api/user/balance/withdrawals`,
+		func(w http.ResponseWriter, r *http.Request) {
+			middleware.Conveyor(
+				http.HandlerFunc(h.Withdrawals),
 				logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,

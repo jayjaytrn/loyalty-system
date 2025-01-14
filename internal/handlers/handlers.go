@@ -251,3 +251,96 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
+	var withdrawRequest models.WithdrawRequest
+
+	contentType := r.Header.Get("Content-Type")
+	if contentType != "application/json" {
+		h.Logger.Error("wrong content type: " + contentType)
+		http.Error(w, "wrong content type", http.StatusBadRequest)
+		return
+	}
+
+	UUID := r.Header.Get("UUID")
+	if UUID == "" {
+		http.Error(w, "user UUID not found", http.StatusUnauthorized)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&withdrawRequest)
+	if err != nil {
+		h.Logger.Error("failed to decode request body: " + err.Error())
+		http.Error(w, "failed to decode request body", http.StatusInternalServerError)
+		return
+	}
+
+	if !ValidateOrderNumber(withdrawRequest.OrderNumber) {
+		h.Logger.Error("invalid order number: " + withdrawRequest.OrderNumber)
+		http.Error(w, "invalid order number: ", http.StatusUnprocessableEntity)
+		return
+	}
+
+	balance, err := h.Database.GetBalance(UUID)
+	if err != nil {
+		h.Logger.Error("failed to get balance: " + err.Error())
+		http.Error(w, "failed to get balance", http.StatusInternalServerError)
+		return
+	}
+
+	if balance == nil {
+		h.Logger.Error("balance not found for UUID: " + UUID)
+		http.Error(w, "insufficient balance", http.StatusPaymentRequired)
+		return
+	}
+
+	if balance.Current < withdrawRequest.Sum {
+		h.Logger.Error("insufficient balance: available %.2f, required %.2f", balance.Current, withdrawRequest.Sum)
+		http.Error(w, "insufficient balance", http.StatusPaymentRequired)
+		return
+	}
+
+	err = h.Database.PutWithdraw(UUID, withdrawRequest.OrderNumber, withdrawRequest.Sum)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			h.Logger.Error("order already withdrawn")
+			http.Error(w, "order already withdrawn", http.StatusConflict)
+			return
+		}
+		h.Logger.Error("failed to put withdraw: " + err.Error())
+		http.Error(w, "failed to put withdraw", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.Database.UpdateBalance(UUID, -withdrawRequest.Sum, withdrawRequest.Sum)
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (h *Handler) Withdrawals(w http.ResponseWriter, r *http.Request) {
+	UUID := r.Header.Get("UUID")
+	if UUID == "" {
+		http.Error(w, "user UUID not found", http.StatusUnauthorized)
+		return
+	}
+
+	withdrawals, err := h.Database.GetWithdrawals(UUID)
+	if err != nil {
+		h.Logger.Error("failed to get withdrawals: " + err.Error())
+		http.Error(w, "failed to get withdrawals", http.StatusInternalServerError)
+		return
+	}
+
+	if withdrawals == nil {
+		h.Logger.Debug("no withdrawals found")
+		http.Error(w, "no withdrawals found", http.StatusNoContent)
+		return
+	}
+
+	if err = json.NewEncoder(w).Encode(withdrawals); err != nil {
+		h.Logger.Error("failed to encode withdrawals to JSON: " + err.Error())
+		http.Error(w, "failed to encode withdrawals", http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
