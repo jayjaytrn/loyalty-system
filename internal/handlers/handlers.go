@@ -217,13 +217,13 @@ func (h *Handler) OrdersGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if err = json.NewEncoder(w).Encode(orders); err != nil {
 		h.Logger.Error("failed to encode orders to JSON: " + err.Error())
 		http.Error(w, "failed to encode orders", http.StatusInternalServerError)
+		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
@@ -246,12 +246,14 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 			Withdrawn: 0,
 		}
 	}
-	if err = json.NewEncoder(w).Encode(balance); err != nil {
-		http.Error(w, "failed to encode orders", http.StatusInternalServerError)
-	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	if err = json.NewEncoder(w).Encode(balance); err != nil {
+		h.Logger.Error("failed to encode balance: " + err.Error())
+		http.Error(w, "failed to encode orders", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
@@ -339,11 +341,11 @@ func (h *Handler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if err = json.NewEncoder(w).Encode(withdrawals); err != nil {
 		h.Logger.Error("failed to encode withdrawals to JSON: " + err.Error())
 		http.Error(w, "failed to encode withdrawals", http.StatusInternalServerError)
+		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 }
