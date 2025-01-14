@@ -15,7 +15,7 @@ const (
 )
 
 type Order struct {
-	UUID        string      `json:"uuid"`
+	UUID        string      `json:"uuid,omitempty"`
 	OrderNumber string      `json:"number"`
 	OrderStatus OrderStatus `json:"status"`
 	Accrual     *uint64     `json:"accrual,omitempty"`

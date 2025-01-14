@@ -94,7 +94,7 @@ func (m *Manager) GetOrdersList(UUID string) ([]*models.Order, error) {
 	var orders []*models.Order
 
 	rows, err := m.db.Query(`
-		SELECT uuid, order_number, order_status, accrual, uploaded_at
+		SELECT order_number, order_status, accrual, uploaded_at
 		FROM orders
 		WHERE uuid = $1
 		ORDER BY uploaded_at DESC
@@ -106,7 +106,7 @@ func (m *Manager) GetOrdersList(UUID string) ([]*models.Order, error) {
 
 	for rows.Next() {
 		var order models.Order
-		err := rows.Scan(&order.UUID, &order.OrderNumber, &order.OrderStatus, &order.Accrual, &order.UploadedAt)
+		err := rows.Scan(&order.OrderNumber, &order.OrderStatus, &order.Accrual, &order.UploadedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %v", err)
 		}
