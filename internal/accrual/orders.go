@@ -7,6 +7,7 @@ import (
 	"github.com/jayjaytrn/loyalty-system/config"
 	"github.com/jayjaytrn/loyalty-system/internal/db"
 	"github.com/jayjaytrn/loyalty-system/models"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
@@ -15,13 +16,15 @@ type Manager struct {
 	Database *db.Manager
 	Orders   chan models.OrderToAccrual
 	Config   *config.Config
+	Logger   *zap.SugaredLogger
 }
 
-func NewManager(orders chan models.OrderToAccrual, database *db.Manager, config *config.Config) *Manager {
+func NewManager(orders chan models.OrderToAccrual, database *db.Manager, config *config.Config, logger *zap.SugaredLogger) *Manager {
 	return &Manager{
 		Orders:   orders,
 		Database: database,
 		Config:   config,
+		Logger:   logger,
 	}
 }
 
@@ -29,11 +32,11 @@ func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("stopping order processing due to context cancellation")
+			m.Logger.Info("context done")
 			return
 		case order, ok := <-m.Orders:
 			if !ok {
-				fmt.Println("orders channel closed, stopping processing")
+				m.Logger.Info("order channel closed")
 				return
 			}
 			orderInfo, err := m.getOrderInfo(order.OrderNumber)
@@ -57,7 +60,7 @@ func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
 func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) {
 	err := m.Database.UpdateOrder(accrualResponse)
 	if err != nil {
-		fmt.Println(err)
+		m.Logger.Warn(err)
 	}
 
 }
@@ -70,7 +73,7 @@ func (m *Manager) updateBalance(UUID string, accrual float64, withdraw float64) 
 }
 
 func (m *Manager) getOrderInfo(orderNumber string) (*models.AccrualResponse, error) {
-	url := fmt.Sprintf("http://localhost:8080/api/orders/%s", orderNumber)
+	url := fmt.Sprintf("%s/api/orders/%s", m.Config.AccrualSystemAddress, orderNumber)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 

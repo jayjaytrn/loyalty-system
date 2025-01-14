@@ -10,7 +10,6 @@ import (
 	"github.com/jayjaytrn/loyalty-system/internal/middleware"
 	"github.com/jayjaytrn/loyalty-system/logging"
 	"github.com/jayjaytrn/loyalty-system/models"
-	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -27,7 +26,7 @@ func main() {
 	defer database.Close()
 
 	ordersToAccrualSystem := make(chan models.OrderToAccrual)
-	am := accrual.NewManager(ordersToAccrualSystem, database, cfg)
+	am := accrual.NewManager(ordersToAccrualSystem, database, cfg, logger)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go am.GetOrderInfoAndUpdateBalances(ctx)
@@ -39,19 +38,19 @@ func main() {
 		AccrualManager: am,
 	}
 
-	r := initRouter(h, logger)
+	r := initRouter(h)
 
 	err = http.ListenAndServe(cfg.RunAddress, r)
 	logger.Fatalw("failed to start server", "error", err)
 }
 
-func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
+func initRouter(h handlers.Handler) *chi.Mux {
 	r := chi.NewRouter()
 	r.Post(`/api/user/register`,
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Register),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateCredentialsAndHashLogin,
@@ -62,7 +61,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Login),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateCredentialsAndHashLogin,
@@ -73,7 +72,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Orders),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateAuth,
@@ -84,7 +83,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.OrdersGet),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateAuth,
@@ -95,7 +94,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Balance),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateAuth,
@@ -106,7 +105,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Withdraw),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateAuth,
@@ -117,7 +116,7 @@ func initRouter(h handlers.Handler, logger *zap.SugaredLogger) *chi.Mux {
 		func(w http.ResponseWriter, r *http.Request) {
 			middleware.Conveyor(
 				http.HandlerFunc(h.Withdrawals),
-				logger,
+				h.Logger,
 				middleware.WriteWithCompression,
 				middleware.ReadWithCompression,
 				middleware.ValidateAuth,
