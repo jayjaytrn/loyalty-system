@@ -18,6 +18,6 @@ type Order struct {
 	UUID        string      `json:"uuid,omitempty"`
 	OrderNumber string      `json:"number"`
 	OrderStatus OrderStatus `json:"status"`
-	Accrual     *uint64     `json:"accrual,omitempty"`
+	Accrual     *float32    `json:"accrual,omitempty"`
 	UploadedAt  time.Time   `json:"uploaded_at"`
 }
