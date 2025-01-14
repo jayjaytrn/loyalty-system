@@ -15,7 +15,7 @@ func UpWithdrawalsTable(ctx context.Context, tx *sql.Tx) error {
 (
     uuid UUID NOT NULL,
     order_number VARCHAR(255) PRIMARY KEY,
-    sum INT DEFAULT 0,
+    sum NUMERIC DEFAULT 0,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );`)
 	return err

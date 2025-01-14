@@ -16,7 +16,7 @@ func UpOrdersTable(ctx context.Context, tx *sql.Tx) error {
     uuid UUID NOT NULL,
     order_number VARCHAR(255) PRIMARY KEY,
     order_status VARCHAR(255) NOT NULL,
-    accrual INT DEFAULT 0,
+    accrual NUMERIC DEFAULT 0,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );`)
 	return err
