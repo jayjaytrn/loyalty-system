@@ -30,6 +30,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go am.StartOrderProcessing(ctx)
+	go am.HandleUnprocessedOrders(ctx)
 
 	h := handlers.Handler{
 		Config:         cfg,
