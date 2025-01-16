@@ -9,6 +9,7 @@ import (
 	"github.com/jayjaytrn/loyalty-system/models"
 	"go.uber.org/zap"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -30,11 +31,20 @@ func NewManager(orders chan models.OrderToAccrual, database *db.Manager, config 
 	}
 }
 
-func (m *Manager) StartOrderProcessing() {
+func (m *Manager) StartOrderProcessing(ctx context.Context) {
+	var wg sync.WaitGroup
 
+	for i := 0; i < m.Config.WorkerCount; i++ {
+		wg.Add(1)
+		go func(workerId int) {
+			defer wg.Done()
+			m.processOrders(ctx)
+		}(i)
+	}
+	wg.Wait()
 }
 
-func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
+func (m *Manager) processOrders(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():

@@ -29,7 +29,7 @@ func main() {
 	am := accrual.NewManager(ordersToAccrualSystem, database, cfg, logger)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go am.GetOrderInfoAndUpdateBalances(ctx)
+	go am.StartOrderProcessing(ctx)
 
 	h := handlers.Handler{
 		Config:         cfg,
