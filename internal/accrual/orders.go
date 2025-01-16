@@ -47,6 +47,7 @@ func (m *Manager) GetOrderInfoAndUpdateBalances(ctx context.Context) {
 			orderInfo, err := m.getOrderInfo(order.OrderNumber)
 			if err != nil {
 				m.Logger.Error("failed to get order info", zap.Error(err))
+				continue
 			}
 			if orderInfo == nil {
 				m.Logger.Info("order info is nil, mark it as invalid")
@@ -101,7 +102,7 @@ func (m *Manager) getOrderInfo(orderNumber string) (*models.AccrualResponse, err
 		}
 	}
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
