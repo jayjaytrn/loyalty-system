@@ -127,6 +127,11 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	orderNumber := string(body)
+	if orderNumber == "" {
+		h.Logger.Error("empty order number")
+		http.Error(w, "empty order number", http.StatusBadRequest)
+		return
+	}
 	if !ValidateOrderNumber(orderNumber) {
 		h.Logger.Error("invalid order number: " + orderNumber)
 		http.Error(w, "invalid order number: ", http.StatusUnprocessableEntity)
