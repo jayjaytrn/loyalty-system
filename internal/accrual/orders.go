@@ -73,9 +73,7 @@ func (m *Manager) processOrders(ctx context.Context) {
 				})
 				continue
 			}
-			if orderInfo.Status != models.AccrualOrderRegistered {
-				m.updateOrder(orderInfo)
-			}
+			m.updateOrder(orderInfo)
 			if orderInfo.Accrual != 0 {
 				withdrawn := 0
 				m.updateBalance(order.UUID, orderInfo.Accrual, float32(withdrawn))
