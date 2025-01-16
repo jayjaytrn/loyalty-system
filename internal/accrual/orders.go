@@ -53,6 +53,7 @@ func (m *Manager) processOrders(ctx context.Context) {
 		case <-m.NeedToSleep:
 			m.Logger.Info("the number of requests to the accrual service has been exceeded; timeout")
 			time.Sleep(m.Config.AccrualRequestTimeoutSeconds * time.Second)
+			m.NeedToSleep <- false
 		case order, ok := <-m.Orders:
 			if !ok {
 				m.Logger.Info("order channel closed")
@@ -86,7 +87,7 @@ func (m *Manager) processOrders(ctx context.Context) {
 func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) {
 	err := m.Database.UpdateOrder(accrualResponse)
 	if err != nil {
-		m.Logger.Warn("failed to update order", zap.Error(err))
+		m.Logger.Error("failed to update order", zap.Error(err))
 	}
 
 }
@@ -127,4 +128,56 @@ func (m *Manager) getOrderInfo(orderNumber string) (*models.AccrualResponse, err
 	}
 
 	return &accrualResp, nil
+}
+
+func (m *Manager) processUnprocessedOrders() error {
+	m.Logger.Info("processing unprocessed orders...")
+
+	unprocessedOrders, err := m.Database.GetUnprocessedOrders()
+	if err != nil {
+		return fmt.Errorf("failed to get unprocessed orders: %v", err)
+	}
+
+	var ordersToAccrual []models.OrderToAccrual
+
+	for _, u := range unprocessedOrders {
+		ordersToAccrual = append(ordersToAccrual, models.OrderToAccrual{
+			OrderNumber: u.OrderNumber,
+			UUID:        u.UUID,
+		})
+	}
+
+	for _, order := range ordersToAccrual {
+		select {
+		case m.Orders <- order:
+			m.Logger.Info("added unprocessed order to channel", zap.String("order", order.OrderNumber))
+		default:
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) HandleUnprocessedOrders(ctx context.Context) {
+	ticker := time.NewTicker(m.Config.RecoveryIntervalSeconds * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			m.Logger.Info("context done")
+			return
+		case <-m.NeedToSleep:
+			m.Logger.Info("need to sleep")
+			time.Sleep(m.Config.AccrualRequestTimeoutSeconds * time.Second)
+			m.NeedToSleep <- false
+		case <-ticker.C:
+			m.Logger.Info("checking unprocessed orders")
+
+			err := m.processUnprocessedOrders()
+			if err != nil {
+				m.Logger.Error("failed to process unprocessed orders", zap.Error(err))
+			}
+		}
+	}
 }

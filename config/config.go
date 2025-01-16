@@ -12,6 +12,8 @@ type Config struct {
 	DatabaseURI                  string        `env:"DATABASE_URI,required"`
 	AccrualSystemAddress         string        `env:"ACCRUAL_SYSTEM_ADDRESS,required"`
 	AccrualRequestTimeoutSeconds time.Duration `env:"ACCRUAL_REQUEST_TIMEOUT"`
+	RecoveryIntervalSeconds      time.Duration `env:"RECOVERY_INTERVAL"`
+	RecoveryRetryDurationMinutes time.Duration `env:"RECOVERY_RETRY_INTERVAL"`
 	WorkerCount                  int           `env:"WORKER_COUNT"`
 }
 
@@ -25,6 +27,8 @@ func GetConfig() *Config {
 	flag.StringVar(&config.DatabaseURI, "d", "postgres://admin:admin@localhost:5432/test", "DatabaseURI")
 	flag.StringVar(&config.AccrualSystemAddress, "r", "test", "AccrualSystemAddress")
 	flag.DurationVar(&config.AccrualRequestTimeoutSeconds, "t", 5, "AccrualRequestTimeoutSeconds")
+	flag.DurationVar(&config.RecoveryIntervalSeconds, "i", 5, "RecoveryIntervalSeconds")
+	flag.DurationVar(&config.RecoveryRetryDurationMinutes, "m", 60, "RecoveryRetryDurationMinutes")
 	flag.IntVar(&config.WorkerCount, "w", 10, "WorkerCount")
 	flag.Parse()
 

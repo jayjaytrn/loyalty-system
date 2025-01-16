@@ -82,6 +82,7 @@ func (m *Manager) UpdateOrder(order *models.AccrualResponse) error {
         UPDATE orders
         SET order_status = $1, accrual = $2
         WHERE order_number = $3
+        AND accrual = 0
     `, order.Status, order.Accrual, order.Order)
 	if err != nil {
 		return fmt.Errorf("failed to update order: %v", err)
@@ -214,6 +215,37 @@ func (m *Manager) GetBalance(UUID string) (*models.Balance, error) {
 	}
 
 	return &balance, nil
+}
+
+func (m *Manager) GetUnprocessedOrders() ([]*models.Order, error) {
+	var orders []*models.Order
+
+	rows, err := m.db.Query(`
+		SELECT uuid, order_number, uploaded_at
+		FROM orders
+		WHERE order_status = $1
+		ORDER BY uploaded_at DESC
+	`, models.OrderRegistered)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close() // Обеспечиваем закрытие rows после завершения работы с ними
+
+	// Итерируем по полученным строкам и заполняем срез заказов
+	for rows.Next() {
+		var order models.Order
+		if err := rows.Scan(&order.UUID, &order.OrderNumber, &order.UploadedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		orders = append(orders, &order)
+	}
+
+	// Проверяем, были ли ошибки при итерации по строкам
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	return orders, nil
 }
 
 func (m *Manager) Close() error {

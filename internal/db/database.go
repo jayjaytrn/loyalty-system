@@ -19,5 +19,6 @@ type Database interface {
 	PutWithdraw(UUID string, orderNumber string, sum float32) error
 	GetWithdrawals() ([]*models.WithdrawalsResponse, error)
 
+	GetUnprocessedOrders() ([]*models.Order, error)
 	Close() error
 }
