@@ -318,6 +318,11 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Database.UpdateBalance(UUID, -withdrawRequest.Sum, withdrawRequest.Sum)
+	if err != nil {
+		h.Logger.Error("failed to update balance: " + err.Error())
+		http.Error(w, "failed to update balance", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
