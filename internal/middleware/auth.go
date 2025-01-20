@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"github.com/jayjaytrn/loyalty-system/internal/auth"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
+
+	"github.com/jayjaytrn/loyalty-system/internal/auth"
+	"go.uber.org/zap"
 )
 
 func ValidateAuth(h http.Handler, sugar *zap.SugaredLogger) http.Handler {

@@ -2,9 +2,10 @@ package config
 
 import (
 	"flag"
+	"time"
+
 	"github.com/caarlos0/env/v6"
 	"github.com/jayjaytrn/loyalty-system/logging"
-	"time"
 )
 
 type Config struct {

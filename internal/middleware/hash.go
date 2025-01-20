@@ -5,10 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/jayjaytrn/loyalty-system/models"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
+
+	"github.com/jayjaytrn/loyalty-system/models"
+	"go.uber.org/zap"
 )
 
 func ValidateCredentialsAndHashLogin(h http.Handler, sugar *zap.SugaredLogger) http.Handler {

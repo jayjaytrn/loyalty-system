@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jayjaytrn/loyalty-system/config"
 	_ "github.com/jayjaytrn/loyalty-system/internal/db/migrations"
 	"github.com/jayjaytrn/loyalty-system/models"
 	"github.com/pressly/goose/v3"
-	"log"
 )
 
 type Manager struct {

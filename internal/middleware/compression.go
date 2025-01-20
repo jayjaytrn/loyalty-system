@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"compress/gzip"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 type (

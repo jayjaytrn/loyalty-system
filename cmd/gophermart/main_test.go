@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jayjaytrn/loyalty-system/internal/accrual"
 	"github.com/jayjaytrn/loyalty-system/internal/db"
@@ -13,11 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestRegister(t *testing.T) {

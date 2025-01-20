@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jayjaytrn/loyalty-system/config"
 	"github.com/jayjaytrn/loyalty-system/internal/accrual"
@@ -10,7 +12,6 @@ import (
 	"github.com/jayjaytrn/loyalty-system/internal/middleware"
 	"github.com/jayjaytrn/loyalty-system/logging"
 	"github.com/jayjaytrn/loyalty-system/models"
-	"net/http"
 )
 
 func main() {

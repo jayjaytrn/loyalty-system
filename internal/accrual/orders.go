@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"sync"
+	"time"
+
 	"github.com/jayjaytrn/loyalty-system/config"
 	"github.com/jayjaytrn/loyalty-system/internal/db"
 	"github.com/jayjaytrn/loyalty-system/models"
 	"go.uber.org/zap"
-	"net/http"
-	"sync"
-	"time"
 )
 
 type Manager struct {

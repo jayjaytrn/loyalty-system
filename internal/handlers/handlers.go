@@ -2,6 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/jayjaytrn/loyalty-system/config"
 	"github.com/jayjaytrn/loyalty-system/internal/accrual"
@@ -10,10 +15,6 @@ import (
 	"github.com/jayjaytrn/loyalty-system/models"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"io"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type Handler struct {
