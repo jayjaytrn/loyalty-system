@@ -28,7 +28,7 @@ func TestRegister(t *testing.T) {
 	}
 	defer mockdb.Close()
 
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 
 	handler := &handlers.Handler{
 		Database: &manager,
@@ -82,7 +82,7 @@ func TestLogin(t *testing.T) {
 	}
 	defer mockdb.Close()
 
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 
 	handler := &handlers.Handler{
 		Database: &manager,
@@ -169,7 +169,7 @@ func TestOrders(t *testing.T) {
 	}
 	defer mockdb.Close()
 
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 	logger := zap.NewNop().Sugar()
 
 	accrualChan := make(chan models.OrderToAccrual, 1)
@@ -287,7 +287,7 @@ func TestOrdersGet(t *testing.T) {
 	defer mockdb.Close()
 
 	// Create the manager with the mock DB
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 
 	handler := &handlers.Handler{
 		Database: &manager,
@@ -334,7 +334,7 @@ func TestBalance(t *testing.T) {
 	}
 	defer mockdb.Close()
 
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 
 	handler := &handlers.Handler{
 		Database: &manager,
@@ -375,7 +375,7 @@ func TestWithdraw(t *testing.T) {
 	}
 	defer mockdb.Close()
 
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 
 	handler := &handlers.Handler{
 		Database: &manager,
@@ -432,7 +432,7 @@ func TestWithdrawals(t *testing.T) {
 	}
 	defer mockdb.Close()
 
-	manager := db.Manager{Db: mockdb}
+	manager := db.Manager{DB: mockdb}
 
 	handler := &handlers.Handler{
 		Database: &manager,

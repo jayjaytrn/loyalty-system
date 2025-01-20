@@ -14,7 +14,7 @@ import (
 )
 
 type Manager struct {
-	Db *sql.DB
+	DB *sql.DB
 }
 
 func NewManager(cfg *config.Config) (*Manager, error) {
@@ -28,7 +28,7 @@ func NewManager(cfg *config.Config) (*Manager, error) {
 	}
 
 	manager := &Manager{
-		Db: db,
+		DB: db,
 	}
 
 	if err = goose.Up(db, "./internal/db/migrations"); err != nil {
@@ -39,7 +39,7 @@ func NewManager(cfg *config.Config) (*Manager, error) {
 }
 
 func (m *Manager) PutUniqueUserData(user models.User) error {
-	_, err := m.Db.Exec(`
+	_, err := m.DB.Exec(`
         INSERT INTO users (uuid, login, password)
         VALUES ($1, $2, $3)
     `, user.UUID, user.Login, user.Password)
@@ -53,7 +53,7 @@ func (m *Manager) PutUniqueUserData(user models.User) error {
 func (m *Manager) GetUserData(login string) (models.User, error) {
 	var user models.User
 
-	err := m.Db.QueryRow(`
+	err := m.DB.QueryRow(`
 		SELECT uuid, login, password 
 		FROM users 
 		WHERE login = $1
@@ -67,7 +67,7 @@ func (m *Manager) GetUserData(login string) (models.User, error) {
 }
 
 func (m *Manager) PutOrder(order models.Order) error {
-	_, err := m.Db.Exec(`
+	_, err := m.DB.Exec(`
         INSERT INTO orders (uuid, order_number, order_status)
         VALUES ($1, $2, $3)
     `, order.UUID, order.OrderNumber, order.OrderStatus)
@@ -79,7 +79,7 @@ func (m *Manager) PutOrder(order models.Order) error {
 }
 
 func (m *Manager) UpdateOrder(order *models.AccrualResponse) error {
-	_, err := m.Db.Exec(`
+	_, err := m.DB.Exec(`
         UPDATE orders
         SET order_status = $1, accrual = $2
         WHERE order_number = $3
@@ -95,7 +95,7 @@ func (m *Manager) UpdateOrder(order *models.AccrualResponse) error {
 func (m *Manager) GetOrdersList(UUID string) ([]*models.Order, error) {
 	var orders []*models.Order
 
-	rows, err := m.Db.Query(`
+	rows, err := m.DB.Query(`
 		SELECT order_number, order_status, accrual, uploaded_at
 		FROM orders
 		WHERE uuid = $1
@@ -125,7 +125,7 @@ func (m *Manager) GetOrdersList(UUID string) ([]*models.Order, error) {
 func (m *Manager) GetOrderByOrderNumber(orderNumber string) (*models.Order, error) {
 	var order models.Order
 
-	err := m.Db.QueryRow(`
+	err := m.DB.QueryRow(`
 		SELECT uuid, order_number, order_status, accrual, uploaded_at
 		FROM orders
 		WHERE order_number = $1
@@ -142,7 +142,7 @@ func (m *Manager) GetOrderByOrderNumber(orderNumber string) (*models.Order, erro
 }
 
 func (m *Manager) UpdateBalance(UUID string, accrual float32, withdrawn float32) error {
-	_, err := m.Db.Exec(`
+	_, err := m.DB.Exec(`
 		INSERT INTO balances (uuid, current, withdrawn)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (uuid) DO UPDATE
@@ -158,7 +158,7 @@ func (m *Manager) UpdateBalance(UUID string, accrual float32, withdrawn float32)
 }
 
 func (m *Manager) PutWithdraw(UUID string, orderNumber string, sum float32) error {
-	_, err := m.Db.Exec(`
+	_, err := m.DB.Exec(`
 		INSERT INTO withdrawals (uuid, order_number, sum)
 		VALUES ($1, $2, $3)
 	`, UUID, orderNumber, sum)
@@ -171,7 +171,7 @@ func (m *Manager) PutWithdraw(UUID string, orderNumber string, sum float32) erro
 }
 
 func (m *Manager) GetWithdrawals(UUID string) ([]*models.WithdrawalsResponse, error) {
-	rows, err := m.Db.Query(`
+	rows, err := m.DB.Query(`
 		SELECT order_number, sum, processed_at
 		FROM withdrawals
 		WHERE uuid = $1
@@ -202,7 +202,7 @@ func (m *Manager) GetWithdrawals(UUID string) ([]*models.WithdrawalsResponse, er
 func (m *Manager) GetBalance(UUID string) (*models.Balance, error) {
 	var balance models.Balance
 
-	err := m.Db.QueryRow(`
+	err := m.DB.QueryRow(`
 		SELECT current, withdrawn
 		FROM balances
 		WHERE uuid = $1
@@ -221,7 +221,7 @@ func (m *Manager) GetBalance(UUID string) (*models.Balance, error) {
 func (m *Manager) GetUnprocessedOrders() ([]*models.Order, error) {
 	var orders []*models.Order
 
-	rows, err := m.Db.Query(`
+	rows, err := m.DB.Query(`
 		SELECT uuid, order_number, uploaded_at
 		FROM orders
 		WHERE order_status = $1
@@ -250,5 +250,5 @@ func (m *Manager) GetUnprocessedOrders() ([]*models.Order, error) {
 }
 
 func (m *Manager) Close() error {
-	return m.Db.Close()
+	return m.DB.Close()
 }
