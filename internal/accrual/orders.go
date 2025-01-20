@@ -52,7 +52,7 @@ func (m *Manager) processOrders(ctx context.Context) {
 			return
 		case <-m.NeedToSleep:
 			m.Logger.Info("the number of requests to the accrual service has been exceeded; timeout")
-			time.Sleep(m.Config.AccrualRequestTimeoutSeconds * time.Second)
+			time.Sleep(m.Config.AccrualRequestTimeout)
 			m.NeedToSleep <- false
 		case order, ok := <-m.Orders:
 			if !ok {
@@ -66,7 +66,7 @@ func (m *Manager) processOrders(ctx context.Context) {
 			}
 			if orderInfo == nil {
 				m.Logger.Info("order info is nil, mark it as invalid")
-				m.updateOrder(&models.AccrualResponse{
+				_ = m.updateOrder(&models.AccrualResponse{
 					Status:  models.AccrualOrderInvalid,
 					Order:   order.OrderNumber,
 					Accrual: 0,
@@ -74,7 +74,11 @@ func (m *Manager) processOrders(ctx context.Context) {
 				continue
 			}
 			if orderInfo.Status != models.AccrualOrderRegistered {
-				m.updateOrder(orderInfo)
+				err = m.updateOrder(orderInfo)
+				if err != nil {
+					m.Logger.Error("failed to update order info", zap.Error(err))
+					continue
+				}
 			}
 			if orderInfo.Accrual != 0 {
 				withdrawn := 0
@@ -84,12 +88,13 @@ func (m *Manager) processOrders(ctx context.Context) {
 	}
 }
 
-func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) {
+func (m *Manager) updateOrder(accrualResponse *models.AccrualResponse) error {
 	err := m.Database.UpdateOrder(accrualResponse)
 	if err != nil {
 		m.Logger.Error("failed to update order", zap.Error(err))
+		return err
 	}
-
+	return nil
 }
 
 func (m *Manager) updateBalance(UUID string, accrual float32, withdraw float32) {
@@ -159,7 +164,7 @@ func (m *Manager) processUnprocessedOrders() error {
 }
 
 func (m *Manager) HandleUnprocessedOrders(ctx context.Context) {
-	ticker := time.NewTicker(m.Config.RecoveryIntervalSeconds * time.Second)
+	ticker := time.NewTicker(m.Config.RecoveryInterval)
 	defer ticker.Stop()
 
 	for {
@@ -169,7 +174,7 @@ func (m *Manager) HandleUnprocessedOrders(ctx context.Context) {
 			return
 		case <-m.NeedToSleep:
 			m.Logger.Info("need to sleep")
-			time.Sleep(m.Config.AccrualRequestTimeoutSeconds * time.Second)
+			time.Sleep(m.Config.AccrualRequestTimeout)
 			m.NeedToSleep <- false
 		case <-ticker.C:
 			m.Logger.Info("checking unprocessed orders")

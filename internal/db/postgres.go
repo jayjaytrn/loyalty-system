@@ -82,6 +82,7 @@ func (m *Manager) UpdateOrder(order *models.AccrualResponse) error {
         UPDATE orders
         SET order_status = $1, accrual = $2
         WHERE order_number = $3
+        AND order_status != $1
     `, order.Status, order.Accrual, order.Order)
 	if err != nil {
 		return fmt.Errorf("failed to update order: %v", err)
