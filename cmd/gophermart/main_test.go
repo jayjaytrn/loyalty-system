@@ -295,12 +295,12 @@ func TestOrdersGet(t *testing.T) {
 	}
 
 	UUID := "user-uuid"
-	uploaded_at := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+	uploadedAt := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	mock.ExpectQuery(`SELECT order_number, order_status, accrual, uploaded_at FROM orders WHERE uuid = \$1 ORDER BY uploaded_at DESC`).
 		WithArgs(UUID).
 		WillReturnRows(sqlmock.NewRows([]string{"order_number", "order_status", "accrual", "uploaded_at"}).
-			AddRow("4677951650035254", "OrderRegistered", 100.0, uploaded_at))
+			AddRow("4677951650035254", "OrderRegistered", 100.0, uploadedAt))
 
 	req, err := http.NewRequest("GET", "/orders", nil)
 	if err != nil {
